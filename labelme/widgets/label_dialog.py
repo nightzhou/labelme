@@ -27,6 +27,25 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
             super(LabelQLineEdit, self).keyPressEvent(e)
 
 
+class LabelQListWidget(QtWidgets.QListWidget):
+    def __init__(self, ldedit=None, ldaccept=None):
+        self.ldedit = ldedit
+        self.ldaccept = ldaccept
+        super(LabelQListWidget, self).__init__()
+
+    def mouseDoubleClickEvent(self, e):
+        if e.button() == QtCore.Qt.LeftButton:
+            text = self.ldedit.text()
+            if hasattr(text, 'strip'):
+                text = text.strip()
+            else:
+                text = text.trimmed()
+            if text:
+                self.ldaccept()
+        else:
+            super(LabelQListWidget, self).mouseDoubleClickEvent(e)
+
+
 class LabelDialog(QtWidgets.QDialog):
 
     def __init__(self, text="Enter object label", parent=None, labels=None,
@@ -54,11 +73,12 @@ class LabelDialog(QtWidgets.QDialog):
         )
         bb.button(bb.Ok).setIcon(labelme.utils.newIcon('done'))
         bb.button(bb.Cancel).setIcon(labelme.utils.newIcon('undo'))
-        bb.accepted.connect(self.validate)
+        self.buttonBox.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
         layout.addWidget(bb)
         # label_list
-        self.labelList = QtWidgets.QListWidget()
+        # self.labelList = QtWidgets.QListWidget()
+        self.labelList = LabelQListWidget(ldedit=self.edit, ldaccept=self.accept)
         if self._fit_to_content['row']:
             self.labelList.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOff
@@ -106,6 +126,22 @@ class LabelDialog(QtWidgets.QDialog):
             raise ValueError('Unsupported completion: {}'.format(completion))
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
+
+    def mouseDoubleClickEvent(self, e):
+        # if e.buttons() == QtCore.LeftButton:
+        if e.button() == QtCore.Qt.LeftButton:
+            print('双击')
+            # self.buttonBox.accepted.connect(self.validate)
+            self.validate()
+            # text = self.edit.text()
+            # if hasattr(text, 'strip'):
+            #     text = text.strip()
+            # else:
+            #     text = text.trimmed()
+            # if text:
+            #     self.accept()
+        else:
+            super(LabelDialog, self).mouseDoubleClickEvent(e)
 
     def addLabelHistory(self, label):
         if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
